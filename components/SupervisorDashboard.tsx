@@ -1,11 +1,10 @@
 
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, Suspense } from 'react';
 import { AppContext } from '../context/AppContext';
-import UserDashboard from './UserDashboard';
 import { getAppData } from '../services/dataService';
 import { AppData, PointOfSale } from '../types';
 import { ReadOnlyPOSList, ReadOnlyGroupsList, ReadOnlyUsersList } from './AdminViews';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 import LogoutIcon from './icons/LogoutIcon';
@@ -19,6 +18,9 @@ import ArrowLeftIcon from './icons/ArrowLeftIcon';
 import CloseIcon from './icons/CloseIcon';
 import ArrowUpIcon from './icons/ArrowUpIcon';
 import HistoryIcon from './icons/HistoryIcon';
+
+// Carga perezosa del dashboard de usuario para evitar bloqueos síncronos
+const UserDashboard = React.lazy(() => import('./UserDashboard'));
 
 type SupervisorView = 'menu' | 'tarifas' | 'pos' | 'users' | 'groups' | 'inventarios' | 'tarifas_impreso';
 
@@ -124,8 +126,7 @@ const SupervisorDashboard: React.FC = () => {
   };
 
   const generateInventoryTable = (doc: jsPDF, pos: PointOfSale, articles: any[], title: string) => {
-        // CORRECCIÓN 2: CABECERA PERFECTAMENTE ALINEADA Y PAREJA (SOLICITUD IMAGEN 1)
-        // "debe estar todo en la misma línea". Eliminamos \n y concatenamos con separadores.
+        // CORRECCIÓN 2: CABECERA PERFECTAMENTE ALINEADA Y PAREJA
         const headerText = `${title}   -   TIENDA: ${pos.zona} (${pos.código}) - ${pos.población}`;
 
         autoTable(doc, {
@@ -137,16 +138,15 @@ const SupervisorDashboard: React.FC = () => {
             styles: { 
                 lineWidth: 0.3, 
                 lineColor: [0, 0, 0],
-                minCellHeight: 12 // Altura fija para que la cabecera se vea robusta y centrada
+                minCellHeight: 12 
             },
             margin: { top: 10, left: 10, right: 10 },
             pageBreak: 'avoid'
         });
 
-        // CORRECCIÓN 3: CUERPO ROBUSTO Y PAREJO (SOLICITUD IMAGEN 2)
-        // Usamos la propiedad startY basada en la tabla anterior
+        // CORRECCIÓN 3: CUERPO ROBUSTO Y PAREJO
         autoTable(doc, {
-            startY: (doc as any).lastAutoTable.finalY, // Pegado a la cabecera
+            startY: (doc as any).lastAutoTable.finalY, 
             head: [['C.Art', 'Secc.', 'Descripción', 'EXISTENCIAS', 'NOTA']],
             body: articles.map(art => [
                 art.Referencia,
@@ -158,18 +158,18 @@ const SupervisorDashboard: React.FC = () => {
             theme: 'grid',
             styles: { 
                 fontSize: 8,
-                cellPadding: 1.5, // Padding ajustado
+                cellPadding: 1.5, 
                 lineColor: [0, 0, 0],
                 lineWidth: 0.1,
                 textColor: [0,0,0],
-                valign: 'middle', // Alineación vertical centrada perfecta
-                minCellHeight: 6 // Altura mínima de fila para homogeneidad
+                valign: 'middle', 
+                minCellHeight: 6 
             },
             headStyles: { 
                 fillColor: [255, 255, 255],
                 textColor: [0, 0, 0],
                 fontStyle: 'bold',
-                lineWidth: 0.2, // Borde cabecera un poco más grueso
+                lineWidth: 0.2, 
                 lineColor: [0, 0, 0],
                 halign: 'center',
                 valign: 'middle',
@@ -186,7 +186,7 @@ const SupervisorDashboard: React.FC = () => {
         });
   };
 
-  // --- LÓGICA DE GENERACIÓN DE TARIFAS (REDISEÑO COMPLETO IMAGEN 5) ---
+  // --- LÓGICA DE GENERACIÓN DE TARIFAS ---
   const handleGenerateTariff = () => {
       if (!tarPosId) {
           alert("⚠️ Selecciona una tienda válida.");
@@ -200,13 +200,7 @@ const SupervisorDashboard: React.FC = () => {
         const doc = new jsPDF();
         const companyName = data?.companyName || "Paraíso de la Carne Selección";
         const fechaRev = new Date(tarRevisionDate).toLocaleDateString('es-ES');
-
-        // REQUERIMIENTO: "IMAGEN 5" -> Tabla tipo Grid con bordes.
-        // Columnas solicitadas: Mostrador, Familia, Código, Tipo (W/U -> P/U Español), Artículo, PVP
-        
         const showPvp = tarShowPvp === 'Si';
-        
-        // Cabeceras exactas solicitadas (Tipo para P/U)
         const headers = [['Mostrador', 'Familia', 'Código', 'Tipo', 'Artículo', showPvp ? 'PVP' : '']];
 
         const rows = (data?.articulos || [])
@@ -230,19 +224,17 @@ const SupervisorDashboard: React.FC = () => {
                     if (!isNaN(num)) precioStr = num.toLocaleString('es-ES', {minimumFractionDigits: 2}) + ' €';
                 }
 
-                // CORRECCIÓN: Mantener valores en español (P/U) tal cual vienen de la BD
                 const uniMedDisplay = art.UniMed || ''; 
 
                 return [
-                    art.Sección,     // Mostrador
-                    art.Familia,     // Familia (Código)
-                    art.Referencia,  // Código Artículo
-                    uniMedDisplay,   // Columna Tipo (P/U)
-                    art.Descripción, // Artículo
+                    art.Sección, 
+                    art.Familia, 
+                    art.Referencia, 
+                    uniMedDisplay, 
+                    art.Descripción, 
                     showPvp ? precioStr : ''
                 ];
             })
-            // Ordenar por Sección, luego Familia, luego Descripción
             .sort((a, b) => {
                 const secA = parseInt(a[0]) || 99; const secB = parseInt(b[0]) || 99;
                 if (secA !== secB) return secA - secB;
@@ -256,48 +248,45 @@ const SupervisorDashboard: React.FC = () => {
             return;
         }
 
-        // TÍTULO PERSONALIZADO ESTILO IMAGEN 5
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(150, 75, 0); // Color marrón/naranja aprox "Imagen 5"
+        doc.setTextColor(150, 75, 0); 
         doc.text(`CARNICERÍA MEDINA  ###  ${companyName.toUpperCase()}`, 105, 15, { align: 'center' });
         
         doc.setFontSize(10);
         doc.setTextColor(0);
         doc.text(`Fecha Revisión: ${fechaRev}`, 195, 15, { align: 'right' });
 
-        // TABLA ESTILO GRID (Bordes negros completos)
         autoTable(doc, {
             startY: 20,
             head: headers,
             body: rows,
-            theme: 'grid', // IMPORTANTE: Grid dibuja todos los bordes
+            theme: 'grid', 
             styles: {
                 fontSize: 9,
                 cellPadding: 1,
-                lineColor: [0, 0, 0], // Bordes negros
+                lineColor: [0, 0, 0], 
                 lineWidth: 0.1,
                 textColor: [0, 0, 0],
                 valign: 'middle'
             },
             headStyles: {
-                fillColor: [255, 228, 196], // Beige/Crema suave
-                textColor: [100, 50, 0], // Marrón oscuro
+                fillColor: [255, 228, 196], 
+                textColor: [100, 50, 0], 
                 fontStyle: 'bold',
                 halign: 'center',
                 lineWidth: 0.2, 
                 lineColor: [0, 0, 0]
             },
             columnStyles: {
-                0: { cellWidth: 20, halign: 'center' }, // Mostrador
-                1: { cellWidth: 15, halign: 'center' }, // Familia
-                2: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, // Código
-                3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }, // Tipo (P/U)
-                4: { cellWidth: 'auto' }, // Artículo
-                5: { cellWidth: 20, halign: 'right', fontStyle: 'bold' }  // PVP
+                0: { cellWidth: 20, halign: 'center' }, 
+                1: { cellWidth: 15, halign: 'center' }, 
+                2: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }, 
+                3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }, 
+                4: { cellWidth: 'auto' }, 
+                5: { cellWidth: 20, halign: 'right', fontStyle: 'bold' } 
             },
             didDrawPage: function (data) {
-                // Footer estilo carnicería
                 const pageCount = doc.getNumberOfPages();
                 doc.setFontSize(8);
                 doc.setTextColor(150, 75, 0);
@@ -316,7 +305,11 @@ const SupervisorDashboard: React.FC = () => {
   const renderViewContent = () => {
     if (!data) return null;
     switch(view) {
-        case 'tarifas': return <UserDashboard onBack={() => setView('menu')} />;
+        case 'tarifas': return (
+            <Suspense fallback={<div className="p-10 text-center">Cargando Tarifas...</div>}>
+                <UserDashboard onBack={() => setView('menu')} />
+            </Suspense>
+        );
         case 'pos': return <ReadOnlyPOSList pos={data.pos} />;
         case 'groups': return <ReadOnlyGroupsList groups={data.groups} />;
         case 'users': return <ReadOnlyUsersList users={data.users} posList={data.pos} />;
@@ -396,7 +389,7 @@ const SupervisorDashboard: React.FC = () => {
                         </div>
                         <button onClick={() => setView('menu')} className="text-gray-400 hover:text-gray-600 transition-colors"><CloseIcon className="w-6 h-6"/></button>
                     </div>
-                    {/* MENÚ PERMANECE IGUAL, SOLO CAMBIA LA LÓGICA DE GENERACIÓN ARRIBA */}
+                    {/* MENÚ PERMANECE IGUAL */}
                     <div className="p-8 space-y-8 overflow-y-auto">
                         <section className="space-y-4">
                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b pb-2">Selección de Tienda</h3>
@@ -451,7 +444,11 @@ const SupervisorDashboard: React.FC = () => {
   ];
 
   if (view !== 'menu') {
-      if (view === 'tarifas') return <UserDashboard onBack={() => setView('menu')} />;
+      if (view === 'tarifas') return (
+          <Suspense fallback={<div className="p-10 text-center">Cargando Tarifas...</div>}>
+            <UserDashboard onBack={() => setView('menu')} />
+          </Suspense>
+      );
       return (
         <div className="h-screen bg-[#f3f4f6] dark:bg-slate-950 flex flex-col font-sans overflow-hidden">
             <header className="bg-white dark:bg-slate-900 h-16 px-6 flex justify-between items-center shadow-sm border-b dark:border-slate-800 z-20">
