@@ -131,10 +131,10 @@ interface ViewProps {
     onUpdate: (newData: Partial<AppData>) => void;
 }
 
-export const UsersList: React.FC<{ users: User[] } & ViewProps> = ({ users, onUpdate }) => {
+// CORRECCIÓN: Ahora aceptamos posList como prop obligatoria para garantizar el ordenamiento
+export const UsersList: React.FC<{ users: User[], posList: PointOfSale[] } & ViewProps> = ({ users, posList, onUpdate }) => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [posList, setPosList] = useState<PointOfSale[]>([]);
     const [deleteConfig, setDeleteConfig] = useState({ isOpen: false, id: '', name: '' });
     const [showPassword, setShowPassword] = useState(false);
     
@@ -148,17 +148,12 @@ export const UsersList: React.FC<{ users: User[] } & ViewProps> = ({ users, onUp
         verPVP: false 
     });
 
-    useEffect(() => { 
-        getAppData().then(data => {
-            setPosList(data.pos || []);
-        }); 
-    }, []);
-
     // Ordenar usuarios por Código de Tienda
     const sortedUsers = useMemo(() => {
         return [...users].sort((a, b) => {
             const posA = posList.find(p => p.zona === a.zona);
             const posB = posList.find(p => p.zona === b.zona);
+            
             // Usamos 'ZZZ' para que los que no tienen código (Admins/Supervisores) salgan al final
             const codeA = posA?.código || 'ZZZ'; 
             const codeB = posB?.código || 'ZZZ';
