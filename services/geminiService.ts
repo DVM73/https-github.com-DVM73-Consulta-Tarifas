@@ -3,84 +3,75 @@ import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 
 let chatSession: Chat | null = null;
 let aiClient: GoogleGenAI | null = null;
-let lastError: string | null = null;
 
 // Función para obtener el cliente, asegurando que se crea con la clave
 const getAiClient = (): GoogleGenAI | null => {
+    // Si ya existe, devolverlo
     if (aiClient) return aiClient;
     
-    // Intento 1: process.env (Standard/Vercel)
-    let apiKey = process.env.API_KEY;
-
-    // Intento 2: import.meta.env (Vite nativo) - Fallback
-    if (!apiKey || apiKey === 'undefined' || apiKey === '') {
-        // @ts-ignore
-        if (import.meta.env && import.meta.env.VITE_API_KEY) {
-            // @ts-ignore
-            apiKey = import.meta.env.VITE_API_KEY;
-        }
-    }
+    // Obtener clave directamente del proceso
+    const apiKey = process.env.API_KEY;
     
-    if (!apiKey || apiKey === 'undefined' || apiKey === '') {
-        console.warn("⚠️ API Key de Google GenAI no detectada.");
-        lastError = "Falta la API Key en la configuración.";
+    if (!apiKey) {
+        console.warn("⚠️ API Key de Google GenAI no detectada en environment.");
         return null;
+    } else {
+        // Debug seguro (solo para verificar que no está vacía)
+        console.log("🔑 API Key detectada (Longitud: " + apiKey.length + ")");
     }
     
     try {
+        // Crear nueva instancia explícita
         aiClient = new GoogleGenAI({ apiKey: apiKey });
-        console.log("🟢 Cliente IA creado.");
         return aiClient;
-    } catch (e: any) {
+    } catch (e) {
         console.error("Error fatal inicializando cliente AI:", e);
-        lastError = e.message || "Error al inicializar cliente.";
         return null;
     }
 };
 
 // Función para iniciar o reiniciar el chat con un contexto específico
-export async function startNewChat(contextData: string = ""): Promise<boolean> {
+export async function startNewChat(contextData: string = ""): Promise<void> {
+    // Forzar reinicio del cliente para asegurar frescura
     aiClient = null; 
     const ai = getAiClient();
     
     if (!ai) {
+        console.error("No se puede iniciar el chat: Cliente AI no disponible.");
         chatSession = null;
-        return false;
+        return;
     }
 
     const systemInstruction = `
-Eres Gemini, un asistente en la app "Consulta de Tarifas".
-TU COMPORTAMIENTO:
-1. Responde SIEMPRE EN ESPAÑOL.
-2. Sé profesional y conciso.
-3. Usa los siguientes datos para responder si es pertinente:
-${contextData ? contextData.substring(0, 40000) : "Sin datos visualizados."}
+Eres Gemini, un asistente de inteligencia artificial integrado en la aplicación corporativa "Consulta de Tarifas".
+
+TU COMPORTAMIENTO DEBE SER:
+1. **Idioma:** DEBES RESPONDER SIEMPRE EN ESPAÑOL. No importa el idioma en el que te hablen, tu respuesta debe ser en un español claro y profesional.
+2. **Versátil:** Puedes responder a CUALQUIER pregunta, ya sea sobre la aplicación, sobre los datos que ves, o temas generales.
+3. **Analítico (Si hay datos):** A continuación se te proporcionará un "CONTEXTO DE DATOS ACTUAL". Si contiene información, úsala para responder preguntas sobre precios, productos o estadísticas. Si está vacío, actúa como un chat normal.
+4. **Profesional y Conciso:** Tus respuestas deben ser útiles y directas.
+
+CONTEXTO DE DATOS ACTUAL (Lo que ve el usuario):
+${contextData ? contextData.substring(0, 50000) : "El usuario no está visualizando datos específicos ahora mismo."}
+
+EJEMPLOS DE INTERACCIÓN:
+- Usuario: "¿Qué precio tiene el jamón?" -> (Buscas en el contexto y respondes en español).
+- Usuario: "Write an email for employees." -> (Redactas el correo EN ESPAÑOL).
+- Usuario: "Hola, ¿qué puedes hacer?" -> (Te presentas en español).
     `;
 
     try {
-        // INTENTO 1: Modelo Principal (Gemini 3)
         chatSession = ai.chats.create({
             model: 'gemini-3-flash-preview',
-            config: { systemInstruction, temperature: 0.7 },
+            config: {
+                systemInstruction: systemInstruction,
+                temperature: 0.7,
+            },
         });
-        console.log("✅ Chat Gemini 3 iniciado.");
-        return true;
+        console.log("Chat de Gemini inicializado correctamente.");
     } catch (error) {
-        console.warn("⚠️ Fallo Gemini 3, intentando modelo de respaldo...", error);
-        try {
-            // INTENTO 2: Modelo de Respaldo (Gemini 2.5) - Más estable si el 3 falla
-            chatSession = ai.chats.create({
-                model: 'gemini-2.5-flash',
-                config: { systemInstruction, temperature: 0.7 },
-            });
-            console.log("✅ Chat Gemini 2.5 iniciado (Fallback).");
-            return true;
-        } catch (err2: any) {
-            console.error("❌ Error fatal creando sesión de chat:", err2);
-            chatSession = null;
-            lastError = err2.message || "Error al crear sesión.";
-            return false;
-        }
+        console.error("Error al crear sesión de chat Gemini:", error);
+        chatSession = null;
     }
 }
 
@@ -88,15 +79,12 @@ export async function getBotResponse(message: string): Promise<string> {
   try {
     // Si no hay sesión, intentar iniciar una nueva al vuelo
     if (!chatSession) {
-        console.log("🔄 Intentando reconexión automática...");
-        const success = await startNewChat();
-        if (!success) {
-            return `Error de conexión: ${lastError || "Verifica tu API Key."}`;
-        }
+        console.log("Intentando recuperar sesión de chat perdida...");
+        await startNewChat();
     }
 
     if (!chatSession) {
-        return "Error crítico: No se pudo establecer comunicación con la IA.";
+        return "Error: No se pudo conectar con el servicio de IA. Verifica tu conexión o API Key.";
     }
 
     const result: GenerateContentResponse = await chatSession.sendMessage({ message: message });
@@ -108,14 +96,16 @@ export async function getBotResponse(message: string): Promise<string> {
     }
 
   } catch (error: any) {
-    console.error("Error API Gemini:", error);
-    chatSession = null; // Forzar reinicio para la próxima
+    console.error("Error al comunicarse con la API de Gemini:", error);
+    
+    // IMPORTANTE: Si hay error, invalidamos la sesión para forzar reconexión total en el siguiente mensaje
+    chatSession = null;
     aiClient = null;
 
     if (error.message && (error.message.includes('API key') || error.message.includes('403'))) {
-        return "Error de autenticación: Tu API Key no es válida o ha caducado.";
+        return "Error de autenticación con la IA. Verifica que la API Key está configurada correctamente en el archivo .env";
     }
     
-    return "Ha ocurrido un error de conexión temporal. Por favor, pregunta de nuevo.";
+    return "Lo siento, ha ocurrido un error de conexión con la IA. He reiniciado mi memoria, por favor inténtalo de nuevo.";
   }
 }

@@ -7,7 +7,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Funci√≥n auxiliar para buscar variables con diferentes prefijos comunes
+// FunciÛn auxiliar para buscar variables con diferentes prefijos comunes
+// Esto asegura compatibilidad con configuraciones antiguas de Vercel
 const findEnv = (env: Record<string, string>, key: string) => {
   return JSON.stringify(
     env[key] || 
@@ -25,12 +26,12 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
-    // ?? AÔøΩADE ESTA SECCIÔøΩN AQUÔøΩ, DONDE INDICAMOS EL PUERTO QUE DEBE UTILIZAR LA APP PARA ARRANCAR EN LOCAL
+    // ?? A—ADE ESTA SECCI”N AQUÕ, DONDE INDICAMOS EL PUERTO QUE DEBE UTILIZAR LA APP PARA ARRANCAR EN LOCAL
         server: {
           port: 5174,
-          strictPort: true, // Esto evita que si el 5174 estÔøΩ ocupado, salte a otro
+          strictPort: true, // Esto evita que si el 5174 est· ocupado, salte a otro
         },
-    // ?? HASTA AQUÔøΩ
+    // ?? HASTA AQUÕ
     base: './', 
     resolve: {
       alias: {
@@ -53,9 +54,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     define: {
-      // Polyfill vital para evitar "process is not defined" en navegadores
-      'process.env': {}, 
-      // Inyecci√≥n robusta de variables
+      // Mapeo robusto: Busca la clave pura, con prefijo VITE_ o con prefijo REACT_APP_
       'process.env.API_KEY': findEnv(env, 'API_KEY'),
       'process.env.FIREBASE_API_KEY': findEnv(env, 'FIREBASE_API_KEY'),
       'process.env.FIREBASE_AUTH_DOMAIN': findEnv(env, 'FIREBASE_AUTH_DOMAIN'),
