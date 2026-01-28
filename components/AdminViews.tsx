@@ -148,33 +148,27 @@ export const UsersList: React.FC<{ users: User[], posList: PointOfSale[] } & Vie
         verPVP: false 
     });
 
-    // Ordenar usuarios por Código de Tienda (ROBUSTO)
+    // Ordenamiento Numérico Estricto por Cód. Tienda
     const sortedUsers = useMemo(() => {
         const sorted = [...users];
         return sorted.sort((a, b) => {
-            const posA = posList.find(p => p.zona === a.zona);
-            const posB = posList.find(p => p.zona === b.zona);
+            // Buscamos la tienda asociada a la zona de cada usuario
+            // Usamos uppercase para evitar errores de mayúsculas/minúsculas
+            const posA = posList.find(p => p.zona.toUpperCase() === a.zona.toUpperCase());
+            const posB = posList.find(p => p.zona.toUpperCase() === b.zona.toUpperCase());
             
-            // 1. Prioridad: Que tenga tienda asignada.
-            // Si A no tiene, va al final (retorna 1).
-            if (!posA && posB) return 1;
-            // Si B no tiene, A va antes (retorna -1).
-            if (posA && !posB) return -1;
-            // Si ninguno tiene, ordenar por nombre
-            if (!posA && !posB) return a.nombre.localeCompare(b.nombre);
-            
-            // 2. Ambos tienen tienda: Comparar códigos numéricamente
-            if (posA && posB) {
-                const numA = parseInt(posA.código, 10);
-                const numB = parseInt(posB.código, 10);
-                
-                if (!isNaN(numA) && !isNaN(numB)) {
-                    return numA - numB;
-                }
-                // Fallback alfanumérico si no son números
-                return posA.código.localeCompare(posB.código);
+            // Extraemos el código numérico. Si no tiene tienda (ej. Admin), usamos 99999 para que vaya al final.
+            const codeA = posA && posA.código ? parseInt(posA.código, 10) : 99999;
+            const codeB = posB && posB.código ? parseInt(posB.código, 10) : 99999;
+
+            // Si los códigos son iguales (ej: dos empleados en la misma tienda o dos admins)
+            if (codeA === codeB) {
+                // Ordenar alfabéticamente por nombre
+                return a.nombre.localeCompare(b.nombre);
             }
-            return 0;
+
+            // Orden ascendente por código de tienda (1, 2, 7, 10...)
+            return codeA - codeB;
         });
     }, [users, posList]);
 

@@ -213,10 +213,12 @@ const UserDashboard: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         if (e) e.preventDefault();
         
         setIsSending(true);
+        const supervisorRealName = user?.nombre || 'Supervisor';
+        
         const newReport: Report = {
             id: Date.now().toString(),
             date: new Date().toLocaleString(),
-            supervisorName: user?.nombre || 'Supervisor',
+            supervisorName: supervisorRealName,
             zoneFilter: isComparing ? selectedCompareZones.join(', ') : zonaFilter,
             type: exportType,
             csvContent: generateCSV(),
@@ -231,11 +233,17 @@ const UserDashboard: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             const templateID = 'template_aogq9fr';
             const publicKey = 's0Y3v_8CMdSiSPqVz';
 
+            // ENVÍO ROBUSTO DE EMAIL: 
+            // Enviamos el nombre del supervisor en varias variables comunes
+            // para maximizar la compatibilidad con la plantilla existente.
             const templateParams = {
-                supervisor: newReport.supervisorName,
+                supervisor: supervisorRealName,
+                from_name: supervisorRealName, // Standard EmailJS field
+                user_name: supervisorRealName, // Common alternative
                 zona: newReport.zoneFilter,
                 tipo: newReport.type,
-                fecha: newReport.date
+                fecha: newReport.date,
+                message: `Nuevo reporte enviado por: ${supervisorRealName}` // Fallback message
             };
 
             await emailjs.send(serviceID, templateID, templateParams, publicKey);
