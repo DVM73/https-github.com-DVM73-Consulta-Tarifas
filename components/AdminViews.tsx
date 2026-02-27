@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, FC, ChangeEvent } from 'react';
 import { User, PointOfSale, Group, Report, AppData, UserRole, Departamento, Backup, Articulo, Tarifa, Family } from '../types';
 import EditIcon from './icons/EditIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -18,7 +18,7 @@ import { getAppData, saveAllData, overwriteAllData } from '../services/dataServi
 
 // --- VISTAS DE SOLO LECTURA PARA SUPERVISOR ---
 
-export const ReadOnlyUsersList: React.FC<{ users: User[], posList: PointOfSale[] }> = ({ users, posList }) => {
+export const ReadOnlyUsersList: FC<{ users: User[], posList: PointOfSale[] }> = ({ users, posList }) => {
     // Ordenamiento Numérico Estricto por Cód. Tienda
     const sortedUsers = useMemo(() => {
         const sorted = [...users];
@@ -81,7 +81,7 @@ export const ReadOnlyUsersList: React.FC<{ users: User[], posList: PointOfSale[]
     );
 };
 
-export const ReadOnlyPOSList: React.FC<{ pos: PointOfSale[] }> = ({ pos }) => (
+export const ReadOnlyPOSList: FC<{ pos: PointOfSale[] }> = ({ pos }) => (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden animate-fade-in max-h-[80vh] flex flex-col">
         <div className="p-6 border-b dark:border-slate-700 shrink-0">
             <h2 className="text-lg font-bold text-slate-800 dark:text-white uppercase tracking-tight">Puntos de Venta</h2>
@@ -113,7 +113,7 @@ export const ReadOnlyPOSList: React.FC<{ pos: PointOfSale[] }> = ({ pos }) => (
     </div>
 );
 
-export const ReadOnlyGroupsList: React.FC<{ groups: Group[] }> = ({ groups }) => (
+export const ReadOnlyGroupsList: FC<{ groups: Group[] }> = ({ groups }) => (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 max-w-2xl mx-auto overflow-hidden animate-fade-in">
         <div className="p-6 border-b dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 uppercase font-bold text-sm tracking-widest text-slate-700 dark:text-white">Grupos</div>
         <div className="p-4 divide-y dark:divide-slate-700">

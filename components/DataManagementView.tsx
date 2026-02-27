@@ -1,11 +1,11 @@
 
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import ExportIcon from './icons/ExportIcon';
 import ArrowDownIcon from './icons/ArrowDownIcon';
 import UploadIcon from './icons/UploadIcon';
 import { getAppData, overwriteAllData } from '../services/dataService';
 
-export const DataManagementView: React.FC = () => {
+export const DataManagementView = () => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(false);
 

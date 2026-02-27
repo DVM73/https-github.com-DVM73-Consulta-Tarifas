@@ -25,6 +25,13 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    // ---Instrucciones para que utilice el localhost:5174---
+    server: {
+       port: 5174,
+       strictPort: true,
+       host: true
+    },
+    // -----------------------------------------------------------
     base: './', 
     resolve: {
       alias: {

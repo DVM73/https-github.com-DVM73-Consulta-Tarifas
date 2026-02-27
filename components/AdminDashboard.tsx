@@ -1,5 +1,5 @@
 
-import React, { useContext, useState, useEffect } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 import { AdminView, AppData } from '../types';
 import { getAppData, saveAllData } from '../services/dataService';
@@ -22,7 +22,7 @@ import { DataManagementView } from './DataManagementView';
 import FileConverter from './FileConverter';
 import SparklesIcon from './icons/SparklesIcon';
 
-const AdminDashboard: React.FC = () => {
+const AdminDashboard = () => {
     const { logout, user } = useContext(AppContext);
     const [view, setView] = useState<AdminView>('menu');
     const [loading, setLoading] = useState(true);
