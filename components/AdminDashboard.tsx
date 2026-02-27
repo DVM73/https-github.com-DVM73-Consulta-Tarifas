@@ -17,6 +17,7 @@ import ArrowLeftIcon from './icons/ArrowLeftIcon';
 import ArrowDownIcon from './icons/ArrowDownIcon';
 import FlagIcon from './icons/FlagIcon';
 import TagIcon from './icons/TagIcon';
+import { UsersList, POSList, GroupsList, DataUploadView, DataManagementView, ReportsInboxView, BackupView, SettingsView, FamiliesList } from './AdminViews';
 import FileConverter from './FileConverter';
 import SparklesIcon from './icons/SparklesIcon';
 
