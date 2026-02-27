@@ -106,6 +106,10 @@ const FileConverter: React.FC = () => {
             // Si la fila está vacía, saltar
             if (row.length === 0 || !row[1]) return;
 
+            // FILTRO DE SEGURIDAD: Si encontramos una fila que parece ser la cabecera original, la saltamos.
+            // Esto evita duplicados si la estructura del archivo varía ligeramente.
+            if (String(row[1]).trim() === 'Referencia' || String(row[11]).trim() === 'Ult. Costo') return;
+
             const costo = parseFloat(String(row[11]).replace(',', '.')) || 0;
             const iva = parseInt(String(row[12])) || 0;
             
@@ -141,6 +145,9 @@ const FileConverter: React.FC = () => {
         rows.forEach(row => {
             // Si la fila está vacía o no tiene código, saltar
             if (row.length === 0 || !row[2]) return;
+
+            // FILTRO DE SEGURIDAD: Si encontramos una fila que parece ser la cabecera original, la saltamos.
+            if (String(row[2]).trim() === 'Cod.') return;
 
             const pvp = parseFloat(String(row[9]).replace(',', '.')) || 0;
             const pvpOferta = parseFloat(String(row[12]).replace(',', '.')) || 0;
