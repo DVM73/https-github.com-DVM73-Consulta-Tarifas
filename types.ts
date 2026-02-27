@@ -32,7 +32,8 @@ export type AdminView =
   | 'backup'
   | 'settings'
   | 'password'
-  | 'reports';
+  | 'reports'
+  | 'converter';
 
 export interface Articulo {
   Referencia: string;

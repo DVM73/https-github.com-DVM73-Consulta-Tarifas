@@ -17,7 +17,8 @@ import ArrowLeftIcon from './icons/ArrowLeftIcon';
 import ArrowDownIcon from './icons/ArrowDownIcon';
 import FlagIcon from './icons/FlagIcon';
 import TagIcon from './icons/TagIcon';
-import { UsersList, POSList, GroupsList, DataUploadView, DataManagementView, ReportsInboxView, BackupView, SettingsView, FamiliesList } from './AdminViews';
+import FileConverter from './FileConverter';
+import SparklesIcon from './icons/SparklesIcon';
 
 const AdminDashboard: React.FC = () => {
     const { logout, user } = useContext(AppContext);
@@ -55,6 +56,7 @@ const AdminDashboard: React.FC = () => {
             case 'data_io': return <DataManagementView />;
             case 'reports': return <ReportsInboxView reports={data.reports || []} onUpdate={handleUpdateData} onRefresh={refreshData} />;
             case 'backup': return <BackupView backups={data.backups || []} currentData={data} onUpdate={handleUpdateData} />;
+            case 'converter': return <FileConverter />;
             case 'settings': return (
                 <SettingsView 
                     companyName={data.companyName} 
@@ -77,6 +79,7 @@ const AdminDashboard: React.FC = () => {
         { id: 'groups', label: 'Administración de Grupos', desc: 'Gestionar los grupos de tiendas.', icon: BuildingIcon },
         { id: 'families', label: 'Administración de Familias', desc: 'Gestionar códigos y nombres de familias.', icon: TagIcon },
         { id: 'upload', label: 'Carga de datos', desc: 'Subir archivos CSV de artículos y tarifas.', icon: UploadIcon },
+        { id: 'converter', label: 'Conversor XLS a CSV', desc: 'Convertir archivos de Artículos y Tarifas.', icon: SparklesIcon },
         { 
             id: 'data_io', 
             label: 'Exportación / Importación Datos', 
